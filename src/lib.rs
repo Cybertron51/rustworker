@@ -25,10 +25,12 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
     // provide arbitrary data that will be accessible in each route via the `ctx.data()` method.
     let router = Router::new();
 
-    static page: &str = r###"<!doctype html>
+    static PAGE: &str = r###"<!doctype html>
 <html>
 <head>
 	<title>Life is suffering</title>
+	  <link rel="stylesheet" href="css/styles.css?v=1.0">
+
 </head>
 <body class="vsc-initialized" data-gr-ext-installed="" data-new-gr-c-s-check-loaded="14.1071.0">
 <h2>Welcome to the anonymous email sending page!</h2>
@@ -41,18 +43,18 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
 
 <p>and the message you want to send:</p>
 
-<p><input name="messagefield" type="text" /></p>
-
+<textarea id="inputbox" name="inputbox" rows="10" cols="100">Enter your message here</textarea>
 <p>&nbsp;</p>
-
 <p>&nbsp;</p>
+<button id="submit"> Submit </button>
 </body>"###;
 
     // Add as many routes as your Worker needs! Each route will get a `Request` for handling HTTP
     // functionality and a `RouteContext` which you can use to  and get route parameters and
     // Environment bindings like KV Stores, Durable Objects, Secrets, and Variables.
     router
-        .get("/", |_, _| Response::from_html(page))
+        .get("/", |_, _| Response::from_html(PAGE))
+	
         .post_async("/form/:field", |mut req, ctx| async move {
             if let Some(name) = ctx.param("field") {
                 let form = req.form_data().await?;
