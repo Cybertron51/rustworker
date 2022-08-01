@@ -25,11 +25,34 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
     // provide arbitrary data that will be accessible in each route via the `ctx.data()` method.
     let router = Router::new();
 
+    static page: &str = r###"<!doctype html>
+<html>
+<head>
+	<title>Life is suffering</title>
+</head>
+<body class="vsc-initialized" data-gr-ext-installed="" data-new-gr-c-s-check-loaded="14.1071.0">
+<h2>Welcome to the anonymous email sending page!</h2>
+
+<p>Enter in who you want to send the email to:</p>
+
+<p><input name="emailfield" type="email" /></p>
+
+<p>&nbsp;</p>
+
+<p>and the message you want to send:</p>
+
+<p><input name="messagefield" type="text" /></p>
+
+<p>&nbsp;</p>
+
+<p>&nbsp;</p>
+</body>"###;
+
     // Add as many routes as your Worker needs! Each route will get a `Request` for handling HTTP
     // functionality and a `RouteContext` which you can use to  and get route parameters and
     // Environment bindings like KV Stores, Durable Objects, Secrets, and Variables.
     router
-        .get("/", |_, _| Response::ok("balls\nballs"))
+        .get("/", |_, _| Response::from_html(page))
         .post_async("/form/:field", |mut req, ctx| async move {
             if let Some(name) = ctx.param("field") {
                 let form = req.form_data().await?;
@@ -51,6 +74,12 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
             let version = ctx.var("WORKERS_RS_VERSION")?.to_string();
             Response::ok(version)
         })
+
+        .get("/balls", |_, ctx| {
+            let text = String::from("this works maybe");
+            Response::ok(text)
+        })
+
         .run(req, env)
         .await
 }
