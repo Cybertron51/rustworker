@@ -1,7 +1,5 @@
 use serde_json::json;
 use worker::*;
-use std::collections::HashMap;
-use url::Url;
 
 mod utils;
 
@@ -32,14 +30,15 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
 <head>
 	<title>Life is suffering</title>
 	  <link rel="stylesheet" href="css/styles.css?v=1.0">
+
 </head>
-<body class="vsc-initialized" data-gr-ext-installed="" data-new-gr-c-s-check-loaded="14.1071.0">
+<body class="vsc-initialized" data-gr-ext-installed="" data-new-gr-c-s-check-loaded="14.1071.0">  
 <h2>Welcome to the anonymous email sending page!</h2>
- <form enctype="text/plain" action="/result">
-  <label for="email">Email:</label><br>
-  <input type="email" id="email" name="email" value="Enter the recipient's email"><br>
-  <label for="inputbox">Message to send:</label><br>
-  <textarea id="inputbox" name="inputbox" rows="10" cols="100">Enter your message here</textarea>
+<form method="post" action="/">
+  <label for="email">Enter in who you want to send the email to:</label><br>
+  <input type="email" id="email" name="email" value="who you are sending to"><br>
+  <label for="inputbox">and the message you want to send:</label><br>
+  <textarea id="inputbox" name="inputbox" rows="10" cols="100">Enter your message here</textarea><br><br>
   <input type="submit" value="Submit">
 </form> 
 </body>"###;
@@ -49,33 +48,22 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
     // Environment bindings like KV Stores, Durable Objects, Secrets, and Variables.
     router
         .get("/", |_, _| Response::from_html(PAGE))
-	.get_async("/result:info", |_req, ctx| async move {
-	    if let info = ctx.param("info") {
-		let url = Url::parse(&["http::rustworker.cybertron51.workers.dev/result".to_string(), ((info).unwrap().to_string())].concat())?;
-		let mut pairs = url.query_pairs();
-        let mut mappedpairs = HashMap::new(); 
-		mappedpairs = pairs.collect();
-        let text = String::from("it works");
-		return Response::ok(text);
-	    }
-        return Response::error("it doesnt work", 400);
-	}) 
-
-        .post_async("/form/:field", |mut req, ctx| async move {
-            if let Some(name) = ctx.param("field") {
-                let form = req.form_data().await?;
-                match form.get(name) {
-                    Some(FormEntry::Field(value)) => {
-                        return Response::from_json(&json!({ name: value }))
+	
+        .post_async("/", |mut req, ctx| async move {
+	    let form = req.form_data().await?;
+            if let Some(name) = form.get("email") {
+                match name {
+                    FormEntry::Field(email) => {
+                        let emailvalue = &email;
+			return Response::ok(emailvalue)
                     }
-                    Some(FormEntry::File(_)) => {
-                        return Response::error("`field` param in form shouldn't be a File", 422);
-                    }
-                    None => return Response::error("Bad Request", 400),
+                    FormEntry::File(_) => return Response::error("Bad Request", 400),
+ 
                 }
             }
 
             Response::error("Bad Request", 400)
+            
         })
 
         .get("/worker-version", |_, ctx| {
