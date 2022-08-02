@@ -32,21 +32,15 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
 	  <link rel="stylesheet" href="css/styles.css?v=1.0">
 
 </head>
-<body class="vsc-initialized" data-gr-ext-installed="" data-new-gr-c-s-check-loaded="14.1071.0">
+<body class="vsc-initialized" data-gr-ext-installed="" data-new-gr-c-s-check-loaded="14.1071.0">  
 <h2>Welcome to the anonymous email sending page!</h2>
-
-<p>Enter in who you want to send the email to:</p>
-
-<p><input name="emailfield" type="email" /></p>
-
-<p>&nbsp;</p>
-
-<p>and the message you want to send:</p>
-
-<textarea id="inputbox" name="inputbox" rows="10" cols="100">Enter your message here</textarea>
-<p>&nbsp;</p>
-<p>&nbsp;</p>
-<button id="submit"> Submit </button>
+<form method="post" action="/">
+  <label for="email">Enter in who you want to send the email to:</label><br>
+  <input type="email" id="email" name="email" value="who you are sending to"><br>
+  <label for="inputbox">and the message you want to send:</label><br>
+  <textarea id="inputbox" name="inputbox" rows="10" cols="100">Enter your message here</textarea><br><br>
+  <input type="submit" value="Submit">
+</form> 
 </body>"###;
 
     // Add as many routes as your Worker needs! Each route will get a `Request` for handling HTTP
@@ -55,21 +49,21 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
     router
         .get("/", |_, _| Response::from_html(PAGE))
 	
-        .post_async("/form/:field", |mut req, ctx| async move {
-            if let Some(name) = ctx.param("field") {
-                let form = req.form_data().await?;
-                match form.get(name) {
-                    Some(FormEntry::Field(value)) => {
-                        return Response::from_json(&json!({ name: value }))
+        .post_async("/", |mut req, ctx| async move {
+	    let form = req.form_data().await?;
+            if let Some(name) = form.get("email") {
+                match name {
+                    FormEntry::Field(email) => {
+                        let emailvalue = &email;
+			return Response::ok(emailvalue)
                     }
-                    Some(FormEntry::File(_)) => {
-                        return Response::error("`field` param in form shouldn't be a File", 422);
-                    }
-                    None => return Response::error("Bad Request", 400),
+                    FormEntry::File(_) => return Response::error("Bad Request", 400),
+ 
                 }
             }
 
             Response::error("Bad Request", 400)
+            
         })
 
         .get("/worker-version", |_, ctx| {
