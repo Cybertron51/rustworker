@@ -3,6 +3,8 @@ use worker::*;
 use std::collections::HashMap;
 use url::Url;
 
+mod sendgrid_client;
+use sendgrid_client::{EmailRecipientSender,SendgridClient};
 mod utils;
 
 fn log_request(req: &Request) {
@@ -38,6 +40,8 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
  <form enctype="text/plain" action="/result">
   <label for="email">Email:</label><br>
   <input type="email" id="email" name="email" value="Enter the recipient's email"><br>
+  <label for="name">Give their name:</label><br>
+  <input id="name" name="name" value="Enter the recipient's name"><br>
   <label for="inputbox">Message to send:</label><br>
   <textarea id="inputbox" name="inputbox" rows="10" cols="100">Enter your message here</textarea>
   <input type="submit" value="Submit">
@@ -53,8 +57,27 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
 	    if let info = ctx.param("info") {
 		let url = Url::parse(&["http::rustworker.cybertron51.workers.dev/result".to_string(), ((info).unwrap().to_string())].concat())?;
 		let mut pairs = url.query_pairs();
-        let mut mappedpairs = HashMap::new(); 
-		mappedpairs = pairs.collect();
+        let mut mappedpairs: HashMap<_, _> = pairs.collect();
+        let sendgrid_api_key = ctx.var("SENDGRID_APIKEY")?.to_string();
+        let sendgrid_client =SendgridClient::new(&sendgrid_api_key);
+             sendgrid_client
+        .send_email(
+        EmailRecipientSender{// to
+                         email:mappedpairs.get("email").unwrap(),
+                         name:mappedpairs.get("name").unwrap(),
+        },
+        EmailRecipientSender{// from
+                         email:"testacc14324@gmail.com".to_string(),
+                         name:"Test Account".to_string(),
+        },
+        EmailRecipientSender{// reply to
+                         email:"testacc14324@gmail.com".to_string(),
+                         name:"Test Account".to_string(),
+        },
+"Test message",// subject
+"This is just a test message",// message
+)
+.await;
         let text = String::from("it works");
 		return Response::ok(text);
 	    }
