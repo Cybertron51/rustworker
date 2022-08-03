@@ -37,7 +37,7 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
 </head>
 <body class="vsc-initialized" data-gr-ext-installed="" data-new-gr-c-s-check-loaded="14.1071.0">
 <h2>Welcome to the anonymous email sending page!</h2>
- <form enctype="text/plain" action="/result/">
+ <form action="/result/">
   <label for="email">Email:</label><br>
   <input type="email" id="email" name="email" value="Enter the recipient's email"><br>
   <label for="name">Give their name:</label><br>
@@ -47,6 +47,8 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
   <input type="submit" value="Submit">
 </form> 
 </body>"###;
+
+    console_log!("debug work");
 
     // Add as many routes as your Worker needs! Each route will get a `Request` for handling HTTP
     // functionality and a `RouteContext` which you can use to  and get route parameters and
@@ -58,13 +60,14 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
         let url = (req.url()).unwrap();
         let mut pairs = url.query_pairs();
         let mut mappedpairs: HashMap<Cow<'_, str>, Cow<'_, str>> = pairs.collect();
+        console_log!("expression");
         let sendgrid_api_key = ctx.var("SENDGRID_APIKEY")?.to_string();
         let sendgrid_client =SendgridClient::new(&sendgrid_api_key);
              sendgrid_client
         .send_email(
         EmailRecipientSender{// to
-                         email:"derekyp9@gmail.com".to_string(),
-                         name:"Derek Peng".to_string(),
+                         email:mappedpairs.get("email").unwrap().to_string(),
+                         name:mappedpairs.get("name").unwrap().to_string(),
         },
         EmailRecipientSender{// from
                          email:"testacc14324@gmail.com".to_string(),
@@ -75,10 +78,10 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
                          name:"Test Account".to_string(),
         },
         "Test message",// subject
-        "This is just a test message",// message
+        &mappedpairs.get("inputbox").unwrap().to_string(),// message
     )
     .await;
-    return Response::ok("your message has been sent!");    
+    return Response::ok("The message has been sent");    
 	    }
 	) 
 
