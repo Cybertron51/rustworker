@@ -2,7 +2,7 @@ use serde_json::json;
 use worker::*;
 use std::collections::HashMap;
 use url::Url;
-
+use std::borrow::Cow;
 mod sendgrid_client;
 use sendgrid_client::{EmailRecipientSender,SendgridClient};
 mod utils;
@@ -37,7 +37,7 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
 </head>
 <body class="vsc-initialized" data-gr-ext-installed="" data-new-gr-c-s-check-loaded="14.1071.0">
 <h2>Welcome to the anonymous email sending page!</h2>
- <form enctype="text/plain" action="/result">
+ <form enctype="text/plain" action="/result/">
   <label for="email">Email:</label><br>
   <input type="email" id="email" name="email" value="Enter the recipient's email"><br>
   <label for="name">Give their name:</label><br>
@@ -53,18 +53,20 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
     // Environment bindings like KV Stores, Durable Objects, Secrets, and Variables.
     router
         .get("/", |_, _| Response::from_html(PAGE))
-	.get_async("/result:info", |_req, ctx| async move {
+	.get_async("/result/:info", |_req, ctx| async move {
 	    if let info = ctx.param("info") {
-		let url = Url::parse(&["http::rustworker.cybertron51.workers.dev/result".to_string(), ((info).unwrap().to_string())].concat())?;
-		let mut pairs = url.query_pairs();
-        let mut mappedpairs: HashMap<_, _> = pairs.collect();
+		let url = Url::parse(&["https://localhost:8787/result/".to_string(), ((info).unwrap().to_string())].concat())?;
+		dbg!(&url);
+        let mut pairs = url.query_pairs();
+        let mut mappedpairs = HashMap::new();
+        mappedpairs = pairs.collect();
         let sendgrid_api_key = ctx.var("SENDGRID_APIKEY")?.to_string();
         let sendgrid_client =SendgridClient::new(&sendgrid_api_key);
              sendgrid_client
         .send_email(
         EmailRecipientSender{// to
-                         email:mappedpairs.get("email").unwrap(),
-                         name:mappedpairs.get("name").unwrap(),
+                         email:"derekyp9@gmail.com".to_string(),
+                         name:"Derek Peng".to_string(),
         },
         EmailRecipientSender{// from
                          email:"testacc14324@gmail.com".to_string(),
@@ -74,12 +76,11 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
                          email:"testacc14324@gmail.com".to_string(),
                          name:"Test Account".to_string(),
         },
-"Test message",// subject
-"This is just a test message",// message
-)
-.await;
-        let text = String::from("it works");
-		return Response::ok(text);
+        "Test message",// subject
+        "This is just a test message",// message
+    )
+    .await;
+    return Response::ok("Over and out");    
 	    }
         return Response::error("it doesnt work", 400);
 	}) 
