@@ -53,9 +53,10 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
     // Environment bindings like KV Stores, Durable Objects, Secrets, and Variables.
     router
         .get("/", |_, _| Response::from_html(PAGE))
-	.get_async("/result/:info", |_req, ctx| async move {
+	.get_async("/result/:info", |req, ctx| async move {
 	    if let info = ctx.param("info") {
-		let url = Url::parse(&["https://localhost:8787/result/".to_string(), ((info).unwrap().to_string())].concat())?;
+		// let url = Url::parse(req.url().unwrap());
+        let url = (req.url()).unwrap();
 		dbg!(&url);
         let mut pairs = url.query_pairs();
         let mut mappedpairs = HashMap::new();
