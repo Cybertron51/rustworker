@@ -53,14 +53,11 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
     // Environment bindings like KV Stores, Durable Objects, Secrets, and Variables.
     router
         .get("/", |_, _| Response::from_html(PAGE))
-	.get_async("/result/:info", |req, ctx| async move {
-	    if let info = ctx.param("info") {
+	.get_async("/result/", |req, ctx| async move {
 		// let url = Url::parse(req.url().unwrap());
         let url = (req.url()).unwrap();
-		dbg!(&url);
         let mut pairs = url.query_pairs();
-        let mut mappedpairs = HashMap::new();
-        mappedpairs = pairs.collect();
+        let mut mappedpairs: HashMap<Cow<'_, str>, Cow<'_, str>> = pairs.collect();
         let sendgrid_api_key = ctx.var("SENDGRID_APIKEY")?.to_string();
         let sendgrid_client =SendgridClient::new(&sendgrid_api_key);
              sendgrid_client
@@ -81,27 +78,9 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
         "This is just a test message",// message
     )
     .await;
-    return Response::ok("Over and out");    
+    return Response::ok("your message has been sent!");    
 	    }
-        return Response::error("it doesnt work", 400);
-	}) 
-
-        .post_async("/form/:field", |mut req, ctx| async move {
-            if let Some(name) = ctx.param("field") {
-                let form = req.form_data().await?;
-                match form.get(name) {
-                    Some(FormEntry::Field(value)) => {
-                        return Response::from_json(&json!({ name: value }))
-                    }
-                    Some(FormEntry::File(_)) => {
-                        return Response::error("`field` param in form shouldn't be a File", 422);
-                    }
-                    None => return Response::error("Bad Request", 400),
-                }
-            }
-
-            Response::error("Bad Request", 400)
-        })
+	) 
 
         .get("/worker-version", |_, ctx| {
             let version = ctx.var("WORKERS_RS_VERSION")?.to_string();
